@@ -1,92 +1,146 @@
-"use client";
-
 import { X } from "lucide-react";
 import { Card, CardContent, CardTitle } from "../ui/card";
-import { useState, useRef, useEffect } from "react";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
-
+import ConfirmDialog from "../common/confirm-dialog";
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
+import { Board as BoardType } from "@/types/boards";
+import CardItem from "../cards/card-item";
+import CardForm from "../cards/card-form";
+import { useEditable } from "@/hooks/use-editable";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 interface BoardProps {
-  title: string;
+  board: BoardType;
   onDelete: () => void;
   onUpdateTitle: (newTitle: string) => void;
+  onAddCard: (cardTitle: string) => void;
+  onUpdateCard: (cardId: string, content: string) => void;
+  onDeleteCard: (cardId: string) => void;
 }
 
-export function Board({ title, onDelete, onUpdateTitle }: BoardProps) {
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(title);
-
-  const adjustTextareaHeight = () => {
-    if (inputRef.current) {
-      inputRef.current.style.height = "0px";
-      const scrollHeight = inputRef.current.scrollHeight;
-      inputRef.current.style.height = scrollHeight + "px";
-    }
+export function Board({
+  board,
+  onDelete,
+  onUpdateTitle,
+  onAddCard,
+  onUpdateCard,
+  onDeleteCard,
+}: BoardProps) {
+  const cardIds = board.cards?.map((card) => card.id) ?? [];
+  const { isEditing, textareaRef, setIsEditing, handleSubmit, handleKeyDown } =
+    useEditable({
+      initialValue: board.title,
+      onSubmit: onUpdateTitle,
+    });
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: board.id,
+    data: { type: "board", board },
+    disabled: isEditing,
+  });
+  const style = {
+    transition,
+    transform: CSS.Transform.toString(transform),
   };
+  const deleteDialog = useConfirmDialog({
+    onConfirm: onDelete,
+  });
 
-  useEffect(() => {
-    if (isEditing) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-      setTimeout(adjustTextareaHeight, 0);
-    }
-  }, [isEditing]);
-
-  const handleSubmit = () => {
-    const newTitle = editedTitle.trim();
-    if (newTitle && newTitle !== title) {
-      onUpdateTitle(newTitle);
-    } else {
-      setEditedTitle(title);
-    }
-    setIsEditing(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSubmit();
-    } else if (e.key === "Escape") {
-      setEditedTitle(title);
-      setIsEditing(false);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEditedTitle(e.target.value);
-  };
-
-  useEffect(() => {
-    if (isEditing) {
-      adjustTextareaHeight();
-    }
-  }, [editedTitle, isEditing]);
-
-  return (
-    <Card className="w-64 min-h-[106px] flex-shrink-0">
-      <CardContent className="flex justify-between items-start gap-x-2 pt-6">
-        {isEditing ? (
-          <Textarea
-            ref={inputRef}
-            value={editedTitle}
-            onChange={handleChange}
-            onBlur={handleSubmit}
-            onKeyDown={handleKeyDown}
-            className="flex-1 text-sm font-semibold border-transparent focus:bg-muted resize-none min-h-[24px] block w-full px-1"
-            rows={1}
-          />
-        ) : (
+  if (isDragging) {
+    return (
+      <Card
+        ref={setNodeRef}
+        className="w-64 flex-shrink-0 bg-white/60 "
+        style={style}
+      >
+        <CardContent className="flex justify-between items-start gap-x-2 pt-6">
           <CardTitle
             className="text-sm flex-1 cursor-pointer whitespace-pre-wrap py-[9px] px-[5px]"
             onClick={() => setIsEditing(true)}
           >
-            {title}
+            {board.title}
           </CardTitle>
-        )}
-        <Button onClick={onDelete} variant="ghost" className="p-0">
-          <X size={20} className="flex-shrink-0" />
-        </Button>
-      </CardContent>
-    </Card>
+          <Button onClick={deleteDialog.open} variant="ghost" className="p-0">
+            <X size={20} className="flex-shrink-0" />
+          </Button>
+        </CardContent>
+        <div className="flex flex-col gap-y-2 px-2 mt-2">
+          {board.cards?.map((card) => (
+            <CardItem
+              key={card.id}
+              card={card}
+              onDelete={() => onDeleteCard(card.id)}
+              onUpdate={(content) => onUpdateCard(card.id, content)}
+            />
+          ))}
+        </div>
+        <CardForm onSubmit={onAddCard} />
+      </Card>
+    );
+  }
+  return (
+    <>
+      <Card ref={setNodeRef} className="w-64 flex-shrink-0" style={style}>
+        <CardContent
+          className="flex justify-between items-start gap-x-2 pt-6"
+          {...attributes}
+          {...listeners}
+        >
+          {isEditing ? (
+            <Textarea
+              ref={textareaRef}
+              defaultValue={board.title}
+              onBlur={handleSubmit}
+              onKeyDown={handleKeyDown}
+              className="flex-1 text-sm font-semibold border-transparent focus:bg-muted resize-none min-h-[38px] block w-full px-1"
+              rows={1}
+            />
+          ) : (
+            <CardTitle
+              className="text-sm flex-1 cursor-pointer whitespace-pre-wrap py-[9px] px-[5px]"
+              onClick={() => setIsEditing(true)}
+            >
+              {board.title}
+            </CardTitle>
+          )}
+          <Button onClick={deleteDialog.open} variant="ghost" className="p-0">
+            <X size={20} className="flex-shrink-0" />
+          </Button>
+        </CardContent>
+        <div
+          className="flex flex-col gap-y-2 px-2 mt-2 min-h-[50px]"
+          data-type="board"
+          data-board-id={board.id}
+        >
+          <SortableContext items={cardIds}>
+            {board.cards?.map((card) => (
+              <CardItem
+                key={card.id}
+                card={card}
+                onDelete={() => onDeleteCard(card.id)}
+                onUpdate={(content) => onUpdateCard(card.id, content)}
+              />
+            ))}
+          </SortableContext>
+        </div>
+        <CardForm onSubmit={onAddCard} />
+      </Card>
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={deleteDialog.close}
+        title="Delete Board"
+        description="Are you sure you want to delete this board?"
+        cancelText="Cancel"
+        confirmText="Delete"
+        onConfirm={deleteDialog.onConfirm}
+      />
+    </>
   );
 }

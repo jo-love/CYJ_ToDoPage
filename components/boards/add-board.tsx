@@ -30,9 +30,9 @@ const AddBoard = ({ handleAddBoard }: AddBoardProps) => {
     }
   };
   return (
-    <Card className="w-64 flex-shrink-0">
+    <Card className="w-64 min-h-[134px] flex-shrink-0">
       <form onSubmit={handleSubmit}>
-        <CardContent>
+        <CardContent className="pt-6">
           <Input
             ref={inputRef}
             type="text"
