@@ -34,4 +34,5 @@ tailwindcss": "^3.4.1",
 - 카드의 보드 간 이동
 
 4. 기타 내용
+- 초기 보드 2개 생성되어 있음(to-do,done)
 -  localStorage를 사용하여 데이터를 저장
