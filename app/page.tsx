@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  DndContext,
   useSensors,
   useSensor,
   PointerSensor,
@@ -18,6 +17,14 @@ import { Board as BoardType, Card as CardType } from "@/types/boards";
 import { createPortal } from "react-dom";
 import CardItem from "@/components/cards/card-item";
 import { useBoard } from "@/hooks/use-board";
+import dynamic from "next/dynamic";
+
+const BoardContainer = dynamic(
+  () => import("@/components/boards/board-container"),
+  {
+    ssr: false,
+  },
+);
 
 const Home = () => {
   const {
@@ -169,7 +176,7 @@ const Home = () => {
   return (
     <main className="p-4 h-screen">
       <div className="overflow-x-auto h-full">
-        <DndContext
+        <BoardContainer
           sensors={sensors}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
@@ -195,29 +202,30 @@ const Home = () => {
             </SortableContext>
             <AddBoard handleAddBoard={handleAddBoard} />
           </section>
-          {createPortal(
-            <DragOverlay>
-              {activeBoard && (
-                <Board
-                  board={activeBoard}
-                  onDelete={() => {}}
-                  onUpdateTitle={() => {}}
-                  onAddCard={() => {}}
-                  onUpdateCard={() => {}}
-                  onDeleteCard={() => {}}
-                />
-              )}
-              {activeCard && (
-                <CardItem
-                  card={activeCard}
-                  onDelete={() => {}}
-                  onUpdate={() => {}}
-                />
-              )}
-            </DragOverlay>,
-            document.body,
-          )}
-        </DndContext>
+          {typeof document !== "undefined" &&
+            createPortal(
+              <DragOverlay>
+                {activeBoard && (
+                  <Board
+                    board={activeBoard}
+                    onDelete={() => {}}
+                    onUpdateTitle={() => {}}
+                    onAddCard={() => {}}
+                    onUpdateCard={() => {}}
+                    onDeleteCard={() => {}}
+                  />
+                )}
+                {activeCard && (
+                  <CardItem
+                    card={activeCard}
+                    onDelete={() => {}}
+                    onUpdate={() => {}}
+                  />
+                )}
+              </DragOverlay>,
+              document.body,
+            )}
+        </BoardContainer>
       </div>
     </main>
   );

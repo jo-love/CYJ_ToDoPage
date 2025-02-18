@@ -9,7 +9,9 @@ interface UseItemsProps<T extends Item> {
   initialItems: T[];
 }
 
-export const useItems = <T extends Item>({ initialItems }: UseItemsProps<T>) => {
+export const useItems = <T extends Item>({
+  initialItems,
+}: UseItemsProps<T>) => {
   const [items, setItems] = useState<T[]>(initialItems);
 
   const addItem = (newItem: T) => {
@@ -19,8 +21,8 @@ export const useItems = <T extends Item>({ initialItems }: UseItemsProps<T>) => 
   const updateItem = (itemId: string, updates: Partial<T>) => {
     setItems(
       items.map((item) =>
-        item.id === itemId ? { ...item, ...updates } : item
-      )
+        item.id === itemId ? { ...item, ...updates } : item,
+      ),
     );
   };
 
@@ -32,7 +34,7 @@ export const useItems = <T extends Item>({ initialItems }: UseItemsProps<T>) => 
     parentId: string,
     nestedKey: keyof T,
     itemId: string,
-    updates: Partial<T[keyof T]>
+    updates: Partial<T[keyof T]>,
   ) => {
     setItems(
       items.map((item) => {
@@ -42,19 +44,19 @@ export const useItems = <T extends Item>({ initialItems }: UseItemsProps<T>) => 
             [nestedKey]: item[nestedKey].map((nestedItem: Item) =>
               nestedItem.id === itemId
                 ? { ...nestedItem, ...updates }
-                : nestedItem
+                : nestedItem,
             ),
           };
         }
         return item;
-      })
+      }),
     );
   };
 
   const deleteNestedItem = (
     parentId: string,
     nestedKey: keyof T,
-    itemId: string
+    itemId: string,
   ) => {
     setItems(
       items.map((item) => {
@@ -62,12 +64,12 @@ export const useItems = <T extends Item>({ initialItems }: UseItemsProps<T>) => 
           return {
             ...item,
             [nestedKey]: item[nestedKey].filter(
-              (nestedItem: Item) => nestedItem.id !== itemId
+              (nestedItem: Item) => nestedItem.id !== itemId,
             ),
           };
         }
         return item;
-      })
+      }),
     );
   };
 
@@ -80,4 +82,4 @@ export const useItems = <T extends Item>({ initialItems }: UseItemsProps<T>) => 
     updateNestedItems,
     deleteNestedItem,
   };
-}; 
+};

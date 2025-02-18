@@ -4,14 +4,22 @@ import { INITIAL_BOARDS } from "@/lib/constants/boards";
 import { v4 as uuidv4 } from "uuid";
 
 export const useBoard = () => {
-  const [boards, setBoards] = useState<BoardType[]>(() => {
-    const savedBoards = localStorage.getItem("boards");
-    return savedBoards ? JSON.parse(savedBoards) : INITIAL_BOARDS;
-  });
+  const [boards, setBoards] = useState<BoardType[]>(INITIAL_BOARDS);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem("boards", JSON.stringify(boards));
-  }, [boards]);
+    setIsClient(true);
+    const savedBoards = localStorage.getItem("boards");
+    if (savedBoards) {
+      setBoards(JSON.parse(savedBoards));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem("boards", JSON.stringify(boards));
+    }
+  }, [boards, isClient]);
 
   const handleAddBoard = (newBoard: { id: string; title: string }) => {
     setBoards([...boards, newBoard]);
